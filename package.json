@@ -1,0 +1,26 @@
+{
+  "name": "edge-chat-sse",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Microservicio Edge para chat temporal SSE con Hono y Bun.",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir dist",
+    "start": "bun run dist/index.js"
+  },
+  "keywords": ["hono", "bun", "sse", "chat", "edge"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0",
+    "jose": "^6.2.3",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.8.0",
+    "tsx": "^4.22.1",
+    "typescript": "^5.0.0"
+  }
+}
