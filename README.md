@@ -60,7 +60,7 @@ Cinder is a **blazing-fast, ephemeral SSE chat microservice** built with [Hono](
 
 ```bash
 # 1. Clone
-git clone https://github.com/YOUR_USERNAME/cinder.git
+git clone https://github.com/alew140/cinder.git
 cd cinder
 
 # 2. Install
