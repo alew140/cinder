@@ -254,6 +254,19 @@ app.delete('/api/salas/:id', requireApiKey, async (c) => {
   }
 });
 
+  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+  Bun.serve({
+    fetch: app.fetch,
+    port,
+  });
+
+  console.log(`Server running on http://localhost:${port}`);
+// Documentación OpenAPI YAML
+app.get('/docs', async (c) => {
+  const yaml = await Bun.file('openapi.yaml').text();
+  return c.text(yaml, 200, { 'Content-Type': 'text/yaml; charset=utf-8' });
+});
+
 if (import.meta.main) {
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   Bun.serve({

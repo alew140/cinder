@@ -128,9 +128,16 @@ Most JSON endpoints return:
 
 ---
 
+
 ### `GET /health`
 
 Health check.
+
+**Curl example:**
+
+```sh
+curl http://localhost:3000/health
+```
 
 **Success**
 
@@ -142,9 +149,24 @@ Health check.
 
 ---
 
+
 ### `POST /api/salas`
 
 Create (if needed) and join a room. Registers user identity and returns a per-room UUID token.
+
+**Curl example:**
+
+```sh
+curl -X POST http://localhost:3000/api/salas \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: $API_KEY" \
+  -d '{
+    "sala_id": "room-42",
+    "id": "user-1",
+    "nombre": "Ana",
+    "color": "#ffcc00"
+  }'
+```
 
 **Headers**
 
@@ -182,9 +204,16 @@ Create (if needed) and join a room. Registers user identity and returns a per-ro
 
 ---
 
+
 ### `GET /stream?sala=<id>&uuid=<uuid>`
 
 Open SSE stream for a previously registered room user.
+
+**Curl example:**
+
+```sh
+curl -N "http://localhost:3000/stream?sala=room-42&uuid=<uuid>"
+```
 
 **Query params**
 
@@ -213,9 +242,22 @@ data: {"nombre":"Ana","color":"#ffcc00","texto":"Hello!","timestamp":17000000000
 
 ---
 
+
 ### `POST /api/mensajes`
 
 Broadcast message to connected clients in the room.
+
+**Curl example:**
+
+```sh
+curl -X POST http://localhost:3000/api/mensajes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sala_id": "room-42",
+    "uuid": "<uuid>",
+    "texto": "Hello, world!"
+  }'
+```
 
 **Headers**
 
@@ -247,9 +289,17 @@ Broadcast message to connected clients in the room.
 
 ---
 
+
 ### `DELETE /api/salas/:id`
 
 Archive room snapshot to PostgreSQL and then close active SSE clients.
+
+**Curl example:**
+
+```sh
+curl -X DELETE http://localhost:3000/api/salas/room-42 \
+  -H "X-Api-Key: $API_KEY"
+```
 
 **Headers**
 

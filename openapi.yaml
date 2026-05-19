@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: Cinder Chat SSE API
+  version: 1.0.0
+  description: |
+    Ephemeral chat microservice with SSE, in-memory state, and PostgreSQL archiving.
+    See README for details.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required: [ok]
+  /api/salas:
+    post:
+      summary: Create or join a room
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sala_id:
+                  type: string
+                id:
+                  type: string
+                nombre:
+                  type: string
+                color:
+                  type: string
+              required: [sala_id, id, nombre, color]
+      responses:
+        '201':
+          description: Room joined
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  sala_id:
+                    type: string
+                  uuid:
+                    type: string
+                required: [ok, sala_id, uuid]
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /stream:
+    get:
+      summary: Open SSE stream
+      parameters:
+        - in: query
+          name: sala
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: uuid
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized (plain text)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Room not found (plain text)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Unexpected error (plain text)
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/mensajes:
+    post:
+      summary: Broadcast message to room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sala_id:
+                  type: string
+                uuid:
+                  type: string
+                texto:
+                  type: string
+              required: [sala_id, uuid, texto]
+      responses:
+        '200':
+          description: Message accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  msg:
+                    type: string
+                required: [ok, msg]
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /api/salas/{id}:
+    delete:
+      summary: Archive and delete room
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Room archived and deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  msg:
+                    type: string
+                required: [ok, msg]
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '503':
+          description: Archive storage unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorObj'
+        '500':
+          $ref: '#/components/responses/Error500'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+  responses:
+    Error400:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorObj'
+    Error401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorObj'
+    Error404:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorObj'
+    Error500:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorObj'
+  schemas:
+    ErrorObj:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+      required: [ok, error]
