@@ -91,8 +91,8 @@ app.use('*', cors({
 app.get('/health', (c) => c.json({ ok: true }, 200));
 
 
-// POST /api/salas (crear sala o unirse)
-app.post('/api/salas', async (c) => {
+// POST /api/salas (crear sala o unirse) — solo backend
+app.post('/api/salas', requireApiKey, async (c) => {
   try {
     const { sala_id, id, nombre, color } = await c.req.json<{ sala_id: string; id: string; nombre: string; color: string }>();
     if (!sala_id || !id || !nombre || !color) {
