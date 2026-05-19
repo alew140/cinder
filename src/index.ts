@@ -79,7 +79,14 @@ function verificarUUID(uuid: string, salaId: string): UsuarioSala | null {
 
 export const app = new Hono();
 
-app.use('*', cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use('*', cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'X-Api-Key'],
+  exposeHeaders: [],
+  maxAge: 86400,
+  credentials: false,
+}));
 
 app.get('/health', (c) => c.json({ ok: true }, 200));
 
