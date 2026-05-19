@@ -99,19 +99,60 @@ API_KEY=your-secret-key
 
 ---
 
-## API Reference
+## API Contracts
+
+### Authentication Matrix
+
+| Endpoint | Requires `X-Api-Key` | Requires room `uuid` |
+|---|---|---|
+| `GET /health` | No | No |
+| `POST /api/salas` | Yes | No |
+| `GET /stream?sala=<id>&uuid=<uuid>` | No | Yes (query param) |
+| `POST /api/mensajes` | No | Yes (body field) |
+| `DELETE /api/salas/:id` | Yes | No |
+
+> `X-Api-Key` is validated with timing-safe comparison against `API_KEY`.
+
+### Common Error Format (JSON endpoints)
+
+Most JSON endpoints return:
+
+```json
+{
+  "ok": false,
+  "error": "human-readable message"
+}
+```
+
+`GET /stream` returns plain text errors instead of JSON.
+
+---
 
 ### `GET /health`
-Health check. Returns `200 OK` with `{ ok: true }`.
+
+Health check.
+
+**Success**
+
+- `200`:
+
+```json
+{ "ok": true }
+```
 
 ---
 
 ### `POST /api/salas`
-> 🔒 Requires `X-Api-Key` header.
 
-Create a room (if it doesn't exist) and register a user in it. Returns a UUID token used to authenticate SSE and message endpoints.
+Create (if needed) and join a room. Registers user identity and returns a per-room UUID token.
 
-**Request:**
+**Headers**
+
+- `Content-Type: application/json`
+- `X-Api-Key: <API_KEY>`
+
+**Request body**
+
 ```json
 {
   "sala_id": "room-42",
@@ -121,7 +162,10 @@ Create a room (if it doesn't exist) and register a user in it. Returns a UUID to
 }
 ```
 
-**Response:**
+**Success**
+
+- `201`:
+
 ```json
 {
   "ok": true,
@@ -130,24 +174,55 @@ Create a room (if it doesn't exist) and register a user in it. Returns a UUID to
 }
 ```
 
+**Errors**
+
+- `400`: missing required fields (`Faltan datos`) or invalid JSON (`Error de formato en el body`)
+- `401`: invalid or missing API key
+- `500`: `API_KEY` not configured on server
+
 ---
 
 ### `GET /stream?sala=<id>&uuid=<uuid>`
-Opens an SSE stream for the authenticated user. Keep this connection alive to receive real-time messages.
 
-The server pushes events as:
-```
+Open SSE stream for a previously registered room user.
+
+**Query params**
+
+- `sala`: room id
+- `uuid`: token returned by `POST /api/salas`
+
+**Success**
+
+- `200` with SSE headers:
+  - `Content-Type: text/event-stream`
+  - `Cache-Control: no-cache`
+  - `Connection: keep-alive`
+
+Message frame format:
+
+```text
 data: {"nombre":"Ana","color":"#ffcc00","texto":"Hello!","timestamp":1700000000000}
+
 ```
+
+**Errors (plain text)**
+
+- `401`: missing credentials (`Faltan credenciales`) or invalid room UUID
+- `404`: room does not exist (`Sala no existe`)
+- `500`: unexpected stream error
 
 ---
 
 ### `POST /api/mensajes`
-> 🔒 Requires `X-Api-Key` header.
 
-Broadcast a message to all connected clients in a room.
+Broadcast message to connected clients in the room.
 
-**Request:**
+**Headers**
+
+- `Content-Type: application/json`
+
+**Request body**
+
 ```json
 {
   "sala_id": "room-42",
@@ -156,17 +231,57 @@ Broadcast a message to all connected clients in a room.
 }
 ```
 
-**Response:**
+**Success**
+
+- `200`:
+
 ```json
-{ "ok": true }
+{ "ok": true, "msg": "Mensaje recibido" }
 ```
+
+**Errors**
+
+- `400`: missing fields (`Faltan datos o uuid`) or invalid JSON (`Error de formato en el body`)
+- `401`: invalid UUID for room (`No autorizado`)
+- `404`: room does not exist (`Sala no existe`)
 
 ---
 
 ### `DELETE /api/salas/:id`
-> 🔒 Requires `X-Api-Key` header.
 
-Archive the room to PostgreSQL, then disconnect all clients and free memory. **If archiving fails, the room is NOT deleted** — you can retry.
+Archive room snapshot to PostgreSQL and then close active SSE clients.
+
+**Headers**
+
+- `X-Api-Key: <API_KEY>`
+
+**Path params**
+
+- `id`: room id
+
+**Success**
+
+- `200`:
+
+```json
+{
+  "ok": true,
+  "msg": "Sala archivada, eliminada y clientes desconectados"
+}
+```
+
+**Errors**
+
+- `400`: missing room id
+- `401`: invalid or missing API key
+- `404`: room not found
+- `503`: archive storage unavailable (for example invalid or missing `DATABASE_URL`)
+- `500`: archive failure or unexpected server error
+
+**Behavior guarantee**
+
+- Room is deleted from memory only after successful archiving.
+- If archiving fails, room remains active and can be retried.
 
 ---
 
