@@ -254,14 +254,7 @@ app.delete('/api/salas/:id', requireApiKey, async (c) => {
   }
 });
 
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
-  Bun.serve({
-    fetch: app.fetch,
-    port,
-    hostname: "0.0.0.0",
-  });
-
-  console.log(`Server running on http://localhost:${port}`);
+  // ...eliminado: Bun.serve duplicado...
 // Documentación OpenAPI YAML
 app.get('/docs', async (c) => {
   const yaml = await Bun.file('openapi.yaml').text();
