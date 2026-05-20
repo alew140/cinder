@@ -132,6 +132,7 @@ app.get('/stream', async (c) => {
     const stream = new ReadableStream({
       start(controller) {
         let closed = false;
+        let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
         const removeClient = () => {
           salaActual.clientes = salaActual.clientes.filter((cli) => cli !== client);
         };
@@ -141,6 +142,10 @@ app.get('/stream', async (c) => {
           }
 
           closed = true;
+          if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+          }
           removeClient();
 
           try {
@@ -165,6 +170,11 @@ app.get('/stream', async (c) => {
         };
         salaActual.clientes.push(client);
         c.req.raw.signal.addEventListener('abort', safeClose);
+
+        // Heartbeat cada 25s — comentario SSE mínimo (3 bytes) para evitar timeout de Cloudflare (100s)
+        heartbeatTimer = setInterval(() => {
+          client.write(':\n\n');
+        }, 25000);
       },
     });
     return new Response(stream, {
@@ -172,6 +182,9 @@ app.get('/stream', async (c) => {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || '*',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Api-Key',
+        'X-Accel-Buffering': 'no',
       },
     });
   } catch (e) {
@@ -280,6 +293,7 @@ if (import.meta.main) {
     fetch: app.fetch,
     port,
     hostname: "0.0.0.0",
+    idleTimeout: 180, // 3 minutos — suficiente para SSE de larga duración
   });
 
   console.log(`Server running on http://0.0.0.0:${port}`);
