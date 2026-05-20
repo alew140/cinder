@@ -170,6 +170,7 @@ app.get('/stream', async (c) => {
         };
         salaActual.clientes.push(client);
         c.req.raw.signal.addEventListener('abort', safeClose);
+        client.write('event: join\n\n');
 
         // Heartbeat cada 25s — comentario SSE mínimo (3 bytes) para evitar timeout de Cloudflare (100s)
         heartbeatTimer = setInterval(() => {
