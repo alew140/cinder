@@ -256,6 +256,19 @@ app.delete('/api/salas/:id', requireApiKey, async (c) => {
 
   // ...eliminado: Bun.serve duplicado...
 // Documentación OpenAPI YAML
+
+// Logging middleware
+app.use('*', async (c, next) => {
+  const { method, path } = c.req;
+  console.log(`[${new Date().toISOString()}] ${method} ${path}`);
+  try {
+    await next();
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] ERROR en ${method} ${path}:`, err);
+    throw err;
+  }
+});
+
 app.get('/docs', async (c) => {
   const yaml = await Bun.file('openapi.yaml').text();
   return c.text(yaml, 200, { 'Content-Type': 'text/yaml; charset=utf-8' });
