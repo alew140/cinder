@@ -258,6 +258,7 @@ app.delete('/api/salas/:id', requireApiKey, async (c) => {
   Bun.serve({
     fetch: app.fetch,
     port,
+    hostname: "0.0.0.0",
   });
 
   console.log(`Server running on http://localhost:${port}`);
@@ -272,9 +273,10 @@ if (import.meta.main) {
   Bun.serve({
     fetch: app.fetch,
     port,
+    hostname: "0.0.0.0",
   });
 
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on http://0.0.0.0:${port}`);
 }
 
 
