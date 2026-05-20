@@ -133,6 +133,10 @@ app.get('/stream', async (c) => {
       start(controller) {
         let closed = false;
         let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+        const broadcastPresence = () => {
+          const msg = `event: presence\ndata: {"count":${salaActual.clientes.length}}\n\n`;
+          salaActual.clientes.forEach((cli) => cli.write(msg));
+        };
         const removeClient = () => {
           salaActual.clientes = salaActual.clientes.filter((cli) => cli !== client);
         };
@@ -147,6 +151,7 @@ app.get('/stream', async (c) => {
             heartbeatTimer = null;
           }
           removeClient();
+          broadcastPresence();
 
           try {
             controller.close();
@@ -171,6 +176,7 @@ app.get('/stream', async (c) => {
         salaActual.clientes.push(client);
         c.req.raw.signal.addEventListener('abort', safeClose);
         client.write('event: join\n\n');
+        broadcastPresence();
 
         // Heartbeat cada 25s — comentario SSE mínimo (3 bytes) para evitar timeout de Cloudflare (100s)
         heartbeatTimer = setInterval(() => {
