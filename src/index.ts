@@ -262,7 +262,7 @@ app.get('/docs', async (c) => {
 });
 
 if (import.meta.main) {
-  const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+  const port = process.env.PORT ? Number(process.env.PORT) : 80;
   Bun.serve({
     fetch: app.fetch,
     port,
