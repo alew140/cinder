@@ -398,6 +398,43 @@ bun test          # Run all tests
 
 ---
 
+## Production Deployment
+
+### Initial setup (Ubuntu / Debian VM)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/alew140/cinder.git /opt/bingo-chat
+cd /opt/bingo-chat
+bun install --frozen-lockfile --production
+
+# 2. Configure environment
+cp .env.example .env
+nano .env  # set PORT, API_KEY, CORS_ORIGIN, DATABASE_URL
+
+# 3. Install and configure Nginx reverse proxy
+sudo bash setup-nginx-proxy.sh
+
+# 4. Install TLS certificate (Let's Encrypt)
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d your-domain.com
+```
+
+### Updating the app
+
+```bash
+sudo bash update-app.sh   # git pull + bun install + systemctl restart
+```
+
+### SSE / Cloudflare notes
+
+- **Gzip disabled** on the proxy location — compression buffers SSE data and breaks streaming.
+- **Heartbeat every 25 s** — the server sends a bare SSE comment (`:\n\n`, 3 bytes) to keep the connection alive through Cloudflare's 100 s idle timeout.
+- **`proxy_http_version 1.1`** — required so nginx keeps the upstream connection alive.
+- **`idleTimeout: 180`** on `Bun.serve` — prevents Bun from closing idle SSE connections after the default 10 s.
+
+---
+
 ## Project Structure
 
 ```
@@ -408,6 +445,8 @@ cinder/
 ├── test/
 │   ├── api.test.ts              # Unit tests (no external deps)
 │   └── api_integration.test.ts  # Integration tests
+├── setup-nginx-proxy.sh   # Nginx install + config for SSE proxying
+├── update-app.sh          # Pull + reinstall + restart helper
 ├── schema.sql             # PostgreSQL schema
 ├── .env.example
 ├── package.json

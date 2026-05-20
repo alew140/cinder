@@ -27,6 +27,8 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
         proxy_read_timeout 3600s;
+        # Disable gzip for SSE streams — compression buffers data and breaks streaming
+        gzip off;
     }
 }
 EOF
