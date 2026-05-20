@@ -87,12 +87,14 @@ curl http://localhost:3000/health
 | `CORS_ORIGIN` | `*` | Allowed CORS origin |
 | `DATABASE_URL` | — | PostgreSQL connection string for room archiving |
 | `API_KEY` | — | Secret key required in `X-Api-Key` header for protected routes |
+| `SSE_HISTORY_LIMIT` | `20` | Number of recent messages sent only to a newly connected stream client |
 
 ```env
 PORT=3000
 CORS_ORIGIN=https://your-frontend.com
 DATABASE_URL=postgresql://user:password@host:5432/dbname
 API_KEY=your-secret-key
+SSE_HISTORY_LIMIT=20
 ```
 
 > **Note:** If `DATABASE_URL` is missing or invalid, `DELETE /api/salas/:id` will return an error and the room stays active in memory — no silent data loss.
@@ -231,6 +233,17 @@ Message frame format:
 
 ```text
 data: {"nombre":"Ana","color":"#ffcc00","texto":"Hello!","timestamp":1700000000000}
+
+```
+
+On connect, the client also receives:
+
+- `event: join` (empty payload)
+- `event: history` with compact recent messages payload (only for the new client):
+
+```text
+event: history
+data: [{"n":"Ana","c":"#ffcc00","t":"Hello!","ts":1700000000000}]
 
 ```
 

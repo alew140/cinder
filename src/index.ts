@@ -31,6 +31,7 @@ type RoomArchiveSaver = (roomArchive: RoomArchive) => Promise<void>;
 
 export const salasActivas = new Map<string, SalaMem>();
 let persistRoomArchive: RoomArchiveSaver = saveRoomArchive;
+const SSE_HISTORY_LIMIT = Math.max(0, Number(process.env.SSE_HISTORY_LIMIT ?? '20') || 20);
 
 async function requireApiKey(c: Context, next: Next) {
   const serverKey = process.env.API_KEY;
@@ -176,6 +177,12 @@ app.get('/stream', async (c) => {
         salaActual.clientes.push(client);
         c.req.raw.signal.addEventListener('abort', safeClose);
         client.write('event: join\n\n');
+        if (SSE_HISTORY_LIMIT > 0 && salaActual.mensajes.length > 0) {
+          const history = salaActual.mensajes
+            .slice(-SSE_HISTORY_LIMIT)
+            .map((m) => ({ n: m.nombre, c: m.color, t: m.texto, ts: m.timestamp }));
+          client.write(`event: history\ndata: ${JSON.stringify(history)}\n\n`);
+        }
         broadcastPresence();
 
         // Heartbeat cada 25s — comentario SSE mínimo (3 bytes) para evitar timeout de Cloudflare (100s)
